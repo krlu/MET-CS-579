@@ -43,5 +43,3 @@ And you should see:
 
 | id  | created_at | first_name| last_name | middle_name |
 | --- | ---------- | --------- | --------- | ----------- |
-
-> \
