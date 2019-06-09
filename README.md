@@ -1,21 +1,24 @@
 # MET-CS-579
 
 ## Requirements 
-- Java 8+ 
+- Java 8
 - Scala 2.12.8
+- sbt 1.2.8 
 - PostgreSQL 11.3  
 
 ## Setup 
 
-Download the repository, navigate to the root directory run:  
+Download the repository, navigate to the root directory and run:  
 >  sbt clean compile 
 
 This will build all java and scala code and download necessary dependencies\
-After everything is built, create a file called `db.conf` in the `src/main/resources` directory and add the following: 
+After everything is built.create a file called `db.conf` in the `src/main/resources` directory and add the following: 
 ```
 userName=[your postgreSQL user name]
 password=[your postgreSQL password] 
 ``` 
+This will enable the program to access your local database
+
 
 ## Run Experiment 
 
@@ -31,15 +34,14 @@ To check open the psql console on command line and type
 
 > \dt
 
-And you should see:   
 
-| Schema  |  name  | type |  owner   |
-| ------- | ------ | ---- | -------- |
-| public  | person | table| postgres |
+| Schema  |      name       | type  |  owner   |
+| ------- | --------------- | ----- | -------- |
+| public  |     player      | table | postgres |
+| public  |      team       | table | postgres |
+| public  | player_team_rel | table | postgres |
 
-> select * from person 
-
-And you should see: 
+> select * from player; 
 
 | id  | created_at | first_name| last_name | middle_name |
 | --- | ---------- | --------- | --------- | ----------- |
