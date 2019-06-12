@@ -26,7 +26,12 @@ Navigate to `src/main/scala/org/bu/metcs579` and run the main method in `MainExp
 
 The default input to this main method is the following sentence: 
 
-> "a Person has a first name, last name, and middle name"
+```
+A team has a name, location, and many players. 
+A player has a first name, last name, and middle name.
+Every player plays for a team for a fixed amount of time. 
+```
+       
 
 If everything is running correctly, you should have successfully parsed the above sentence 
 and created an empty `Person` table to your default `postgres` database. 
@@ -45,3 +50,8 @@ To check open the psql console on command line and type
 
 | id  | created_at | first_name| last_name | middle_name |
 | --- | ---------- | --------- | --------- | ----------- |
+
+> select * from team_player_rel
+
+| id  | created_at | team_id | player_id | start_date | end_date | 
+| --- | ---------- | ------- | --------- | ---------- | -------- |

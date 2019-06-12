@@ -2,7 +2,9 @@ package org.bu.metcs579
 
 import java.sql.{Connection, DriverManager, Statement}
 import java.io.File
-import com.typesafe.config.{ Config, ConfigFactory }
+
+import com.typesafe.config.{Config, ConfigFactory}
+import org.bu.metcs579.Parser.Entity
 
 
 class DBHandler(host: String, port: Int, dbName: String) {
@@ -14,6 +16,21 @@ class DBHandler(host: String, port: Int, dbName: String) {
   Class.forName(driverName)
   val url = s"jdbc:postgresql://$host:$port/$dbName"
   val c: Connection = DriverManager.getConnection(url, userName, password)
+
+  def createTables(entities: List[Entity]): Unit ={
+    entities.foreach{ table =>
+      createTable(table.name, table.fields)
+    }
+    entities.filter(_.relations.nonEmpty).foreach{ table =>
+      table.relations.foreach{relation =>
+        createTable(relation.tableName, relation.fields)
+      }
+    }
+  }
+
+  def createTable(entity: Entity): Unit = {
+    createTable(entity.name, entity.fields)
+  }
 
   def createTable(name: String, fields: List[(String, String)]): Unit = {
     val stmt: Statement = c.createStatement
