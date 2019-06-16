@@ -14,7 +14,16 @@ object Parser {
     }.toList
   }
 
-  case class Entity(name: String, fields: List[(String, String)], relations: List[Relation])
+  case class Entity(name: String, fields: List[(String, String)], relations: List[Relation]){
+    def + (other: Entity): Entity = {
+      if(other.name == this.name){
+        val combinedFields = (this.fields ++ other.fields).distinct
+        val combinedRelations = (this.relations ++ other.relations).distinct
+        Entity(name, combinedFields, combinedRelations)
+      }
+      else this
+    }
+  }
   case class Relation(e1Name: String, e2Name: String, fields: List[(String, String)]){
     def tableName = s"${e1Name}_${e2Name}_rel"
   }
@@ -71,5 +80,4 @@ object Parser {
     stringToReturn
   }
   private val wordsToFilterOut = Array("a ", "each", "the", "and", "many")
-//  private val hardEntityVerbs = Array("has", "contains", "belongs", "belongs to")
 }

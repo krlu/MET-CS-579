@@ -20,30 +20,19 @@ object MainExperiment {
   }
 
   def test1(): Unit = {
+    val tableNames = List("stint", "team", "player")
+    handler.deleteTables(tableNames)
     val sentence =
-      """a team has a name, location, and many players.
+      """a team has a name, location.
          a player has a first name, last name, and middle name.
-         each player has many stints with many teams"""
+         each player has many stints with many teams.
+         each stint has a start time and end time"""
     val tables = Parser.parseParagraph(sentence)
-    tables.foreach(println)
-    handler.createTables(tables)
+    val combinedTables = tables.map(_.name).toSet.map{ name: String =>
+      val tablesWithName: Seq[Entity] = tables.filter(_.name == name)
+      tablesWithName.foldLeft(Entity(name, List.empty, List.empty))((x: Entity, y: Entity) => x + y)
+    }.toList
+    combinedTables.foreach(println)
+    handler.createTables(combinedTables)
   }
-
-  def test2(): Unit ={
-    val sentence = "each player has many stints with many teams"
-    val tokens = sentence.split("has")
-    val entity1Name = tokens(0).replace("each", "").trim
-    val relationData = tokens(1).split("with").map(s => s.replace("many", "").trim).map(EnglishNoun.singularOf)
-    val relationTableName = relationData(0)
-    val entity2Name = relationData(1)
-    val fields = List(
-      "id" -> "serial not null primary key",
-      "created_at" -> "timestamp not null",
-      s"${entity1Name}_id" -> s"integer references $entity1Name(id)",
-      s"${entity2Name}_id" -> s"integer references $entity2Name(id)"
-    )
-    val table = Entity(relationTableName, fields, List.empty)
-    handler.createTable(table)
-  }
-
 }

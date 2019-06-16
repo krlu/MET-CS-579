@@ -4,10 +4,16 @@ import java.sql.{Connection, DriverManager, Statement}
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.log4j.{BasicConfigurator, Level, Logger}
 import org.bu.metcs579.Parser.Entity
 
 
-class DBHandler(host: String, port: Int, dbName: String) {
+class DBHandler(host: String, port: Int, dbName: String, level: Level = Level.INFO) {
+
+  BasicConfigurator.configure()
+  val log: Logger = Logger.getLogger(getClass.getName)
+  log.setLevel(level)
+
   val config: Config = ConfigFactory.parseFile(new File("src/main/resources/db.conf"))
   val userName: String = config.getString("userName")
   val password: String = config.getString("password")
@@ -37,6 +43,7 @@ class DBHandler(host: String, port: Int, dbName: String) {
     val fieldsConstruction = fields.map{ case (k,v) => s"$k $v"}.mkString(",")
     val sql = s"create table $name ($fieldsConstruction)"
     stmt.executeUpdate(sql)
+    log.info(s"created table $name")
     stmt.close()
   }
 
@@ -46,4 +53,6 @@ class DBHandler(host: String, port: Int, dbName: String) {
     stmt.executeUpdate(sql)
     stmt.close()
   }
+
+  def deleteTables(names: List[String]): Unit = names.foreach(deleteTable)
 }

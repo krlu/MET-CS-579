@@ -44,14 +44,21 @@ To check open the psql console on command line and type
 | ------- | --------------- | ----- | -------- |
 | public  |     player      | table | postgres |
 | public  |      team       | table | postgres |
-| public  | player_team_rel | table | postgres |
+| public  |     stint       | table | postgres |
+
+
+> select * from team; 
+
+| id  | created_at | name | location |
+| --- | ---------- | ---- | -------- |
 
 > select * from player; 
 
 | id  | created_at | first_name| last_name | middle_name |
 | --- | ---------- | --------- | --------- | ----------- |
 
-> select * from team_player_rel
+
+> select * from stint;
 
 | id  | created_at | team_id | player_id | start_date | end_date | 
 | --- | ---------- | ------- | --------- | ---------- | -------- |
