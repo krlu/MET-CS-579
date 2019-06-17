@@ -5,7 +5,7 @@ import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.log4j.{BasicConfigurator, Level, Logger}
-import org.bu.metcs579.Parser.Entity
+import org.bu.metcs579.Parser.{Entity, Relation}
 
 
 class DBHandler(host: String, port: Int, dbName: String, level: Level = Level.INFO) {
@@ -23,21 +23,13 @@ class DBHandler(host: String, port: Int, dbName: String, level: Level = Level.IN
   val url = s"jdbc:postgresql://$host:$port/$dbName"
   val c: Connection = DriverManager.getConnection(url, userName, password)
 
-  def createTables(entities: List[Entity]): Unit ={
-    entities.foreach{ table =>
-      createTable(table.name, table.fields)
-    }
-    entities.filter(_.relations.nonEmpty).foreach{ table =>
-      table.relations.foreach{relation =>
-        createTable(relation.tableName, relation.fields)
-      }
-    }
+  def createTables(entities: List[Entity]): Unit = {
+    entities.foreach(createTable)
+    entities.flatMap(_.relations).foreach(createTable)
   }
 
-  def createTable(entity: Entity): Unit = {
-    createTable(entity.name, entity.fields)
-  }
-
+  def createTable(entity: Entity): Unit = createTable(entity.name, entity.fields)
+  def createTable(relation: Relation): Unit = createTable(relation.tableName, relation.fields)
   def createTable(name: String, fields: List[(String, String)]): Unit = {
     val stmt: Statement = c.createStatement
     val fieldsConstruction = fields.map{ case (k,v) => s"$k $v"}.mkString(",")
