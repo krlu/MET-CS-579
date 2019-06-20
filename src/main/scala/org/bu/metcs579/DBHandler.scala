@@ -1,7 +1,7 @@
 package org.bu.metcs579
 
-import java.sql.{Connection, DriverManager, Statement}
 import java.io.File
+import java.sql.{Connection, DriverManager, Statement}
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.log4j.{BasicConfigurator, Level, Logger}
@@ -40,10 +40,16 @@ class DBHandler(host: String, port: Int, dbName: String, level: Level = Level.IN
   }
 
   def deleteTable(name: String): Unit = {
-    val stmt: Statement = c.createStatement
-    val sql = s"drop table $name"
-    stmt.executeUpdate(sql)
-    stmt.close()
+    val meta = c.getMetaData
+    val res = meta.getTables(null, null, name, Array[String]("TABLE"))
+    val tableExists = res.next()
+    if(tableExists) {
+      val stmt: Statement = c.createStatement
+      val sql = s"drop table $name"
+      stmt.executeUpdate(sql)
+      stmt.close()
+    }
+    else log.warn(s"Tried to drop table '$name' but table does not exist")
   }
 
   def deleteTables(names: List[String]): Unit = names.foreach(deleteTable)

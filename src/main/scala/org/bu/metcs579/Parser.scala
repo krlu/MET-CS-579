@@ -8,10 +8,33 @@ object Parser {
     else
       parseConcreteEntity(sentence)
   }
+
   def parseParagraph(inputDescription: String): List[Entity] = {
-    inputDescription.split("\\.").map { s =>
+    val tables = inputDescription.split("\\.").map { s =>
       parse(s)
     }.toList
+    val uniqueNames = tables.map(_.name).toSet
+
+    // find and remove duplicate entities by name
+    val combinedTables: List[Entity] = uniqueNames.map{ name: String =>
+      val tablesWithName: Seq[Entity] = tables.filter(e => e.name == name)
+      tablesWithName.foldLeft(Entity(name, List.empty, List.empty))((x: Entity, y: Entity) => x + y)
+    }.toList
+    // find and remove duplicate entities by fields
+    var finalTables: List[Entity] = List.empty[Entity]
+    combinedTables.foreach{ table =>
+      if(!finalTables.exists(e => table.fields.forall(f => e.fields.contains(f)))){
+        finalTables = finalTables :+ table
+      }
+    }
+    // find and remove relations with same fields as pre-existing entity
+    val finalTablesWithFilteredRelations = finalTables.map{ table: Entity =>
+      val filteredRelations = table.relations.filter{ relation: Relation =>
+        !finalTables.exists(e => relation.fields.forall(f => e.fields.contains(f)))
+      }
+      table.copy(relations = filteredRelations)
+    }
+    finalTablesWithFilteredRelations
   }
 
   case class Entity(name: String, fields: List[(String, String)], relations: List[Relation]){
