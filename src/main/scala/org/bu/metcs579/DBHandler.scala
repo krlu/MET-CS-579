@@ -34,6 +34,7 @@ class DBHandler(host: String, port: Int, dbName: String, level: Level = Level.IN
     val stmt: Statement = c.createStatement
     val fieldsConstruction = fields.map{ case (k,v) => s"$k $v"}.mkString(",")
     val sql = s"create table $name ($fieldsConstruction)"
+    println(sql)
     stmt.executeUpdate(sql)
     log.info(s"created table $name")
     stmt.close()

@@ -2,17 +2,20 @@ package org.bu.metcs579
 
 object Parser {
 
-  def parse(sentence: String): Entity = {
+  def parse(sentence: String): List[Entity] = {
     if(sentence.contains("has") && sentence.contains("with"))
-      parseRelationshipEntity(sentence)
+      List(parseRelationshipEntity(sentence))
+    else if(sentence.contains("type"))
+      parseTypeEntity(sentence)
     else
-      parseConcreteEntity(sentence)
+      List(parseConcreteEntity(sentence))
   }
 
   def parseParagraph(inputDescription: String): List[Entity] = {
-    val tables = inputDescription.split("\\.").map { s =>
+    val tables: Seq[Entity] = inputDescription.split("\\.").map { s =>
       parse(s)
-    }.toList
+    }.toList.flatten
+
     val uniqueNames = tables.map(_.name).toSet
 
     // find and remove duplicate entities by name
@@ -20,6 +23,7 @@ object Parser {
       val tablesWithName: Seq[Entity] = tables.filter(e => e.name == name)
       tablesWithName.foldLeft(Entity(name, List.empty, List.empty))((x: Entity, y: Entity) => x + y)
     }.toList
+
     // find and remove duplicate entities by fields
     var finalTables: List[Entity] = List.empty[Entity]
     combinedTables.foreach{ table =>
@@ -27,6 +31,7 @@ object Parser {
         finalTables = finalTables :+ table
       }
     }
+
     // find and remove relations with same fields as pre-existing entity
     val finalTablesWithFilteredRelations = finalTables.map{ table: Entity =>
       val filteredRelations = table.relations.filter{ relation: Relation =>
@@ -66,9 +71,22 @@ object Parser {
     Entity(relationTableName, fields, List.empty)
   }
 
+  private def parseTypeEntity(sentence: String): List[Entity] = {
+    val tokens = filterWords(sentence).split(",")
+    val types = tokens.drop(1).map(_.trim)
+    types.toList.map{ name =>
+      val fields = List(
+        "created_at" -> "timestamp not null",
+        s"${name}_id" -> s"integer references food(id)"
+      )
+      Entity(name, fields, List())
+    }
+  }
+
   private def parseConcreteEntity(sentence: String): Entity = {
     val split1 = sentence.split("has")
     val tableName = filterWords(split1(0)).trim
+//    println(split1.toList, split1.size)
     val split2 = splitByWords(split1(1), ",", "and")
     val parsedFields = split2.toList.filter(s => !s.contains("many")).map{ s =>
       val field = filterWords(s).trim.replace(" ", "_")
@@ -85,8 +103,6 @@ object Parser {
     Entity(tableName, allFields, relations)
   }
 
-
-
   private def splitByWords(sentence: String, delimiters: String*): Array[String] = {
     var temp = sentence.split(delimiters.head)
     delimiters.drop(1).foreach{ delimiter =>
@@ -98,9 +114,9 @@ object Parser {
   private def filterWords(inputString: String): String = {
     var stringToReturn = inputString
     wordsToFilterOut.foreach{ word =>
-      stringToReturn = stringToReturn.replace(word, "")
+      stringToReturn = stringToReturn.toLowerCase.replace(word, "")
     }
     stringToReturn
   }
-  private val wordsToFilterOut = Array("a ", "each", "the", "and", "many")
+  private val wordsToFilterOut = Array("a ", "each", "the", "and", "many", "or")
 }
