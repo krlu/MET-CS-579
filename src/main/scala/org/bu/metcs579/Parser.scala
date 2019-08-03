@@ -79,8 +79,9 @@ object Parser {
   }
 
   private def parseTypeEntity(sentence: String): List[Entity] = {
-    val tokens = filterWords(sentence).split(",").map(_.trim)
-
+    val verbs = findVerbs(sentence)
+    val sentenceWithoutMainVerbs = filterWords(sentence, verbs)
+    val tokens = filterWords(sentenceWithoutMainVerbs).split(",").map(_.trim)
     val types = tokens.drop(1)
     // find parent type
     val words = tokens(0).replace("type", "").split(" ")
@@ -112,6 +113,7 @@ object Parser {
       val field = filterWords(s).trim.replace(" ", "_")
       field -> "varchar(64)"
     }
+    println(split2.toList)
     val defaultFields = List("id" -> "serial not null primary key", "created_at" -> "timestamp not null")
     val allFields = defaultFields ++ parsedFields
     val relations = split2.toList.filter(s => s.contains("many")).map{ s =>
@@ -144,5 +146,6 @@ object Parser {
     }
     stringToReturn
   }
-  private val wordsToFilterOut = List("a ", "each ", "the ", "and ", "many ", " or ", " can ")
+  private val wordsToFilterOut = List("a ", "each ", "the ", "and ", "many ", " or ", " can ", " be ", "attribute")
+
 }
