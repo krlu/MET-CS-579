@@ -12,14 +12,14 @@ object MainExperiment {
          each player has many stints with many teams.
          each stint has a start time and end time"""
 
-    val sentence2 = "a groceryStore has many kinds of food. Each food can be of one type, produce, meat, or drink." +
+    val sentence2 = "a groceryStore has food. Each food can be of one type, produce, meat, or drink." +
         "Each food has an expiration, name, description, and price." +
         "Each drink has a volume." +
         "Each meat has protein_count and cooked attributes." +
         "Each produce has a vitamins_count attribute." +
         "A customer can purchase many food."
 
-//    test(sentence1)
+    test(sentence1)
     test(sentence2)
   }
 

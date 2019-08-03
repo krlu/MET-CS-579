@@ -1,9 +1,17 @@
 package org.bu.metcs579
 
+import java.io.FileInputStream
+
+import opennlp.tools.postag.{POSModel, POSTaggerME}
+
 object Parser {
 
+  private val modelIn = new FileInputStream("en-pos-perceptron.bin")
+  private val model = new POSModel(modelIn)
+  private val tagger = new POSTaggerME(model)
+
   def parse(sentence: String): List[Entity] = {
-    if(sentence.contains("has") && sentence.contains("with"))
+    if(sentence.contains(" has ") && sentence.contains("with"))
       List(parseRelationshipEntity(sentence))
     else if(sentence.contains("type"))
       parseTypeEntity(sentence)
@@ -25,17 +33,16 @@ object Parser {
     }.toList
 
     // find and remove duplicate entities by fields
-    var finalTables: List[Entity] = List.empty[Entity]
-    combinedTables.foreach{ table =>
-      if(!finalTables.exists(e => table.fields.forall(f => e.fields.contains(f)))){
-        finalTables = finalTables :+ table
-      }
-    }
-
+//    var finalTables: List[Entity] = List.empty[Entity]
+//    combinedTables.foreach{ table =>
+//      if(!finalTables.exists(e => table.fields.forall(f => e.fields.contains(f)))){
+//        finalTables = finalTables :+ table
+//      }
+//    }
     // find and remove relations with same fields as pre-existing entity
-    val finalTablesWithFilteredRelations = finalTables.map{ table: Entity =>
+    val finalTablesWithFilteredRelations = combinedTables.map{ table: Entity =>
       val filteredRelations = table.relations.filter{ relation: Relation =>
-        !finalTables.exists(e => relation.fields.forall(f => e.fields.contains(f)))
+        !combinedTables.exists(e => relation.fields.forall(f => e.fields.contains(f)))
       }
       table.copy(relations = filteredRelations)
     }
@@ -57,7 +64,7 @@ object Parser {
   }
 
   private def parseRelationshipEntity(sentence: String): Entity = {
-    val tokens = sentence.split("has")
+    val tokens = sentence.split(" has ")
     val entity1Name = tokens(0).replace("each", "").trim
     val relationData = tokens(1).split("with").map(s => s.replace("many", "").trim).map(EnglishNoun.singularOf)
     val relationTableName = relationData(0)
@@ -72,19 +79,32 @@ object Parser {
   }
 
   private def parseTypeEntity(sentence: String): List[Entity] = {
-    val tokens = filterWords(sentence).split(",")
-    val types = tokens.drop(1).map(_.trim)
+    val tokens = filterWords(sentence).split(",").map(_.trim)
+
+    val types = tokens.drop(1)
+    // find parent type
+    val words = tokens(0).replace("type", "").split(" ")
+    val results = tagger.tag(tokens(0).replace("type", "").split(" "))
+    val parentType = (results zip words).find(_._1 == "NN") match {
+      case Some(pair) => pair._2
+      case None => throw new IllegalArgumentException(s"Need parent type defined for ${types.toList.mkString(",")}")
+    }
     types.toList.map{ name =>
       val fields = List(
         "created_at" -> "timestamp not null",
-        s"${name}_id" -> s"integer references food(id)"
+        s"${parentType}_id" -> s"integer references food(id)"
       )
       Entity(name, fields, List())
     }
   }
 
   private def parseConcreteEntity(sentence: String): Entity = {
-    val split1 = sentence.split("has")
+    val verbs = findVerbs(sentence)
+    val sentenceWithoutMainVerbs = filterWords(sentence, verbs)
+    val split1 =
+      if(sentenceWithoutMainVerbs.contains(" has ")) sentenceWithoutMainVerbs.split(" has ")
+      else if(sentenceWithoutMainVerbs.contains(" can ")) sentenceWithoutMainVerbs.split(" can ")
+      else throw new IllegalArgumentException("need verbs has or can to create concrete entity")
     val tableName = filterWords(split1(0)).trim
 //    println(split1.toList, split1.size)
     val split2 = splitByWords(split1(1), ",", "and")
@@ -103,6 +123,12 @@ object Parser {
     Entity(tableName, allFields, relations)
   }
 
+  private def findVerbs(sentence: String): List[String] = {
+    val splitSentence = sentence.split(" ")
+    val results = tagger.tag(splitSentence)
+    (splitSentence zip results).toList.filter(r => r._2 == "VB" || r._2 == "VBN").map(_._1)
+  }
+
   private def splitByWords(sentence: String, delimiters: String*): Array[String] = {
     var temp = sentence.split(delimiters.head)
     delimiters.drop(1).foreach{ delimiter =>
@@ -111,12 +137,12 @@ object Parser {
     temp
   }
 
-  private def filterWords(inputString: String): String = {
+  private def filterWords(inputString: String, filterWords: List[String] = wordsToFilterOut): String = {
     var stringToReturn = inputString
-    wordsToFilterOut.foreach{ word =>
+    filterWords.foreach{ word =>
       stringToReturn = stringToReturn.toLowerCase.replace(word, "")
     }
     stringToReturn
   }
-  private val wordsToFilterOut = Array("a ", "each", "the", "and", "many", "or")
+  private val wordsToFilterOut = List("a ", "each ", "the ", "and ", "many ", " or ", " can ")
 }
