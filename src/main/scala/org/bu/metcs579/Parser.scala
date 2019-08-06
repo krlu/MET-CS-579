@@ -107,13 +107,12 @@ object Parser {
       else if(sentenceWithoutMainVerbs.contains(" can ")) sentenceWithoutMainVerbs.split(" can ")
       else throw new IllegalArgumentException("need verbs has or can to create concrete entity")
     val tableName = filterWords(split1(0)).trim
-//    println(split1.toList, split1.size)
+
     val split2 = splitByWords(split1(1), ",", "and")
     val parsedFields = split2.toList.filter(s => !s.contains("many")).map{ s =>
       val field = filterWords(s).trim.replace(" ", "_")
       field -> "varchar(64)"
     }
-    println(split2.toList)
     val defaultFields = List("id" -> "serial not null primary key", "created_at" -> "timestamp not null")
     val allFields = defaultFields ++ parsedFields
     val relations = split2.toList.filter(s => s.contains("many")).map{ s =>
